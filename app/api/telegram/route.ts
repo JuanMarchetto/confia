@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     await sendMessage(chatId, TG_HELP, true);
   } else {
     try {
-      const verdict = await getVerdict(text);
+      const verdict = await getVerdict(text, { clientId: `tg:${chatId}` });
       await sendMessage(chatId, formatVerdictText(verdict)); // plain text
     } catch {
       await sendMessage(chatId, "No pude procesar eso ahora. Ante una emergencia real llama al 911 o 171.");

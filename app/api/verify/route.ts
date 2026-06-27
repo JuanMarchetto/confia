@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     if (input.length > MAX_LEN) {
       return Response.json({ ok: false, error: "El texto es demasiado largo." } satisfies VerifyResponse, { status: 400 });
     }
-    const verdict = await getVerdict(input);
+    const verdict = await getVerdict(input, { clientId: clientIp(req) });
     return Response.json({ ok: true, verdict } satisfies VerifyResponse);
   } catch {
     return Response.json({ ok: false, error: "No pudimos procesar la verificación. Intenta de nuevo." } satisfies VerifyResponse, { status: 500 });

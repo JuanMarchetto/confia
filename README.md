@@ -65,6 +65,7 @@ Open http://localhost:3000.
 | `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` | Optional — Anthropic-compatible endpoint (e.g. donated proxy) for the long-tail LLM verifier. |
 | `CONFIA_LLM_ENABLED` | Optional — `"true"` enables the LLM long-tail path. KB + forensics always run first; off by default. |
 | `CONFIA_LLM_MODEL` | Optional — model id the endpoint serves (default `claude-sonnet-4-6`). |
+| `CONFIA_LLM_MAX_PER_IP` | Optional — max AI calls per client per hour (default 8; conserves donated inference). |
 
 ## Deploy (Vercel)
 

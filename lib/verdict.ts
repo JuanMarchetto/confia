@@ -4,6 +4,20 @@ import { classify } from "./classify";
 import { analyzeAddress, extractAddresses, RISK_RANK, type ForensicResult } from "./forensics";
 import { DONATION_CHANNELS } from "./knowledge/verified-wallets";
 import { llmEnabled, llmVerdict } from "./llm";
+import { rateLimit } from "./ratelimit";
+
+/** Per-client cap on donated-inference calls (conserve credits + abuse control). */
+const AI_MAX_PER_CLIENT = Number(process.env.CONFIA_LLM_MAX_PER_IP || "8");
+
+function aiAllowed(clientId?: string): boolean {
+  if (!clientId) return true;
+  return rateLimit(`ai:${clientId}`, AI_MAX_PER_CLIENT, 3_600_000).ok; // per hour
+}
+
+export interface VerdictOptions {
+  /** stable per-user id (IP for web, chat id for Telegram) used to rate-limit AI */
+  clientId?: string;
+}
 import { OFFICIAL_CHANNELS, KNOWLEDGE_REVIEWED_AT } from "./knowledge/official";
 import type {
   InfoVerdict,
@@ -15,7 +29,7 @@ import type {
 
 const SITE = process.env.CONFIA_PUBLIC_URL || "https://confia.app";
 
-export async function getVerdict(input: string): Promise<Verdict> {
+export async function getVerdict(input: string, opts: VerdictOptions = {}): Promise<Verdict> {
   const text = input.trim();
 
   // 1) crypto addresses first — analyze ALL detected (a scammer can prepend a decoy),
@@ -61,8 +75,10 @@ export async function getVerdict(input: string): Promise<Verdict> {
   }
 
   // general / long tail — try the donated LLM (conservative, no live web), else fall back.
-  if (llmEnabled()) {
-    const ai = await llmVerdict(input.trim());
+  // Only reached when there's NO wallet in the message (addresses are handled above) and
+  // no KB match. AI usage is capped per client to conserve donated inference.
+  if (llmEnabled() && aiAllowed(opts.clientId)) {
+    const ai = await llmVerdict(text);
     if (ai) {
       return buildInfo({
         query: input.trim(),
