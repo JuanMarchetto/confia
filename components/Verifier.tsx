@@ -4,23 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import type { Verdict, VerifyResponse } from "@/lib/types";
 import VerdictCard from "./VerdictCard";
 
-const EXAMPLES: { label: string; value: string }[] = [
-  {
-    label: "🚨 Un rumor de réplica",
-    value:
-      "Reenviado: URGENTE ⚠️ viene una réplica de magnitud 8.0 hoy a las 6 PM, ¡evacúen ya!",
-  },
-  {
-    label: "💸 Una wallet de “donación”",
-    value:
-      "Ayuda a las víctimas del terremoto 🇻🇪 envía tu donación en USDT o SOL a esta dirección: 5tNZjhKDDJvD52ioU3JimVafBmAjpkYyKhv2xUAbtZNZ",
-  },
-  {
-    label: "🏠 Buscar refugio",
-    value: "¿Dónde está el refugio más cercano y seguro?",
-  },
-];
-
 export default function Verifier() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -65,11 +48,6 @@ export default function Verifier() {
     run(input);
   }
 
-  function useExample(value: string) {
-    setInput(value);
-    run(value);
-  }
-
   return (
     <div className="w-full">
       <form onSubmit={onSubmit}>
@@ -111,21 +89,6 @@ export default function Verifier() {
           </div>
         </div>
       </form>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        <span className="self-center text-xs text-muted">Prueba:</span>
-        {EXAMPLES.map((ex) => (
-          <button
-            key={ex.label}
-            type="button"
-            onClick={() => useExample(ex.value)}
-            disabled={loading}
-            className="inline-flex min-h-[40px] items-center rounded-full border bg-surface px-3 py-2 text-xs font-medium transition-colors hover:border-brand hover:text-brand disabled:opacity-50"
-          >
-            {ex.label}
-          </button>
-        ))}
-      </div>
 
       {/* persistent live region: must exist in the DOM before content is injected */}
       <div aria-live="polite" aria-atomic="true">
