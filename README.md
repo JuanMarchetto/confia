@@ -61,6 +61,10 @@ Open http://localhost:3000.
 | `TELEGRAM_BOT_TOKEN` | Optional — enables the Telegram surface. |
 | `TELEGRAM_WEBHOOK_SECRET` | Optional — validates Telegram webhook calls. |
 | `CONFIA_SCAM_LIST` | Optional — comma-separated known-scam addresses to hard-flag. |
+| `CONFIA_VERIFIED_LIST` | Optional — comma-separated extra verified-good addresses. |
+| `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` | Optional — Anthropic-compatible endpoint (e.g. donated proxy) for the long-tail LLM verifier. |
+| `CONFIA_LLM_ENABLED` | Optional — `"true"` enables the LLM long-tail path. KB + forensics always run first; off by default. |
+| `CONFIA_LLM_MODEL` | Optional — model id the endpoint serves (default `claude-sonnet-4-6`). |
 
 ## Deploy (Vercel)
 

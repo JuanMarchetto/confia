@@ -3,6 +3,7 @@
 import { classify } from "./classify";
 import { analyzeAddress, extractAddresses, RISK_RANK, type ForensicResult } from "./forensics";
 import { DONATION_CHANNELS } from "./knowledge/verified-wallets";
+import { llmEnabled, llmVerdict } from "./llm";
 import { OFFICIAL_CHANNELS, KNOWLEDGE_REVIEWED_AT } from "./knowledge/official";
 import type {
   InfoVerdict,
@@ -59,7 +60,24 @@ export async function getVerdict(input: string): Promise<Verdict> {
     });
   }
 
-  // general — the safe fallback. We never guess on safety-critical questions.
+  // general / long tail — try the donated LLM (conservative, no live web), else fall back.
+  if (llmEnabled()) {
+    const ai = await llmVerdict(input.trim());
+    if (ai) {
+      return buildInfo({
+        query: input.trim(),
+        status: ai.status,
+        category: "general",
+        title: ai.title,
+        detail: ai.detail,
+        advice: ai.advice,
+        sources: [{ name: "Respuesta asistida por IA — sin verificación en vivo" }],
+        matchConfidence: 0.4,
+      });
+    }
+  }
+
+  // safe fallback. We never guess on safety-critical questions.
   return buildInfo({
     query: input.trim(),
     status: "sin_confirmar",
