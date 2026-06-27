@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Verifier from "@/components/Verifier";
 import DonationList from "@/components/DonationList";
 import { OFFICIAL_CHANNELS } from "@/lib/knowledge/official";
@@ -26,9 +27,12 @@ export default function Home() {
             <span className="text-xl font-extrabold tracking-tight text-brand-ink">Confía</span>
             <span aria-hidden className="text-base">🇻🇪</span>
           </div>
-          <span className="rounded-full border px-2.5 py-1 text-xs text-muted">
-            Build4Venezuela
-          </span>
+          <div className="flex items-center gap-3">
+            <Link href="/articulos" className="text-sm font-medium text-brand hover:underline">
+              Guías
+            </Link>
+            <span className="rounded-full border px-2.5 py-1 text-xs text-muted">Build4Venezuela</span>
+          </div>
         </div>
       </header>
 
@@ -150,6 +154,12 @@ export default function Home() {
 
       <footer className="border-t">
         <div className="mx-auto max-w-3xl px-4 py-6 text-center text-xs text-muted">
+          <p className="mb-2">
+            <Link href="/articulos" className="font-medium text-brand hover:underline">
+              Guías verificadas
+            </Link>{" "}
+            · donar seguro, bulos, emergencia
+          </p>
           <p>
             Hecho con solidaridad para{" "}
             <a
