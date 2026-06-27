@@ -1,5 +1,7 @@
 import Verifier from "@/components/Verifier";
+import DonationList from "@/components/DonationList";
 import { OFFICIAL_CHANNELS } from "@/lib/knowledge/official";
+import { DONATION_CHANNELS } from "@/lib/knowledge/verified-wallets";
 
 export default function Home() {
   return (
@@ -102,6 +104,18 @@ export default function Home() {
             Confía da señales de riesgo, no un dictamen definitivo. Ante una
             emergencia real, contacta siempre a las autoridades (911 / 171).
           </p>
+        </section>
+
+        {/* Safe donation addresses */}
+        <section className="mt-12 rounded-2xl border bg-surface p-6">
+          <h2 className="text-lg font-bold">Dona de forma segura 🇻🇪</h2>
+          <p className="mt-1 text-sm text-muted">
+            Direcciones verificadas para donar al esfuerzo de ayuda. Si te comparten otra
+            dirección, pégala arriba y la analizamos en cadena antes de que envíes.
+          </p>
+          <div className="mt-4">
+            <DonationList channels={DONATION_CHANNELS} title="Direcciones verificadas" />
+          </div>
         </section>
 
         {/* Official channels */}

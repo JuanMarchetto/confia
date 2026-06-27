@@ -8,7 +8,16 @@ export type RiskLevel = "alto" | "medio" | "bajo" | "desconocido";
 /** Truth status for a forwarded message / rumor / resource question. */
 export type InfoStatus = "verificado" | "falso" | "sin_confirmar";
 
-export type Chain = "solana" | "ethereum" | "tron" | "bitcoin" | "desconocida";
+export type Chain = "solana" | "evm" | "tron" | "bitcoin" | "sui" | "desconocida";
+
+/** An official, human-verified donation address users can give to safely. */
+export interface DonationChannel {
+  /** display name, e.g. "Solana", "Ethereum", "Base" */
+  chain: string;
+  /** detection network used for matching/explorers */
+  network: Chain;
+  address: string;
+}
 
 export interface Source {
   name: string;
@@ -71,6 +80,8 @@ export interface WalletVerdict extends VerdictBase {
   risk: RiskLevel;
   signals: WalletSignal[];
   metrics: WalletMetrics | null; // null for non-Solana chains we can't deep-inspect
+  /** safe official donation addresses to show when this address isn't trusted */
+  donationChannels?: DonationChannel[];
 }
 
 export interface InfoVerdict extends VerdictBase {

@@ -1,72 +1,100 @@
-// Confía — verified-wallet allowlist (positive-trust signal).
+// Confía — verified donation addresses (positive-trust signal + safe-channel list).
 //
-// A brand-new wallet created right after the quake is ALSO the legit-relief pattern,
-// so on-chain freshness alone can't clear it. This curated, human-verified registry
-// lets a known-good donation address override the "fresh/never-used" danger.
+// These are the official, human-verified addresses to RECEIVE donations. They serve
+// three purposes:
+//   1. Whitelist — pasting one returns ✅ "dirección verificada" (overrides fresh/new danger).
+//   2. Safe alternative — shown in the verdict when the pasted address can't be verified
+//      or looks suspicious ("dona seguro en estas direcciones").
+//   3. Lookalike defense — a near-match of a verified address is flagged as impersonation.
 //
-// GOVERNANCE: adding an entry is a TRUST ASSERTION. Each entry MUST cite verifiable
-// provenance (an official account/site that published the address) and be reviewed by
-// a human before merge. When in doubt, leave it out — a false "verified" is worse than
-// a cautious "no podemos confirmar". Ops can also inject addresses at runtime via the
-// CONFIA_VERIFIED_LIST env var (comma-separated), but those carry no provenance label.
+// GOVERNANCE: each entry is a TRUST ASSERTION — transcribe addresses EXACTLY and review
+// before merge. One EVM address serves all EVM chains (Ethereum/Base/Polygon/Monad/HyperEVM).
 
-import type { Chain, Source } from "../types";
+import type { Chain, DonationChannel, Source } from "../types";
+
+const EVM_DONATION = "0x89b4cB1a0a29be4122a8E00e766F7F89cdB578Cf";
+const SOL_DONATION = "3pUFqvQigz3cutrAGwzeY1qMfYYix57J9PJ2TG6QDhkX";
+const BTC_DONATION = "bc1q00xwfq775swknj3zgf7cq8eul6fn0u6qh4u30m";
+const SUI_DONATION = "0x0e38adc6ba7f2236e9c72651f3a3ab85af8b0900d14ffa6d7b7202d8132763c0";
+
+const EVM_CHAINS = ["Ethereum", "Base", "Polygon", "Monad", "HyperEVM"];
+
+/** Official donation addresses, one row per chain (display list). */
+export const DONATION_CHANNELS: DonationChannel[] = [
+  { chain: "Solana", network: "solana", address: SOL_DONATION },
+  ...EVM_CHAINS.map((chain): DonationChannel => ({ chain, network: "evm", address: EVM_DONATION })),
+  { chain: "Bitcoin", network: "bitcoin", address: BTC_DONATION },
+  { chain: "Sui", network: "sui", address: SUI_DONATION },
+];
 
 export interface VerifiedWallet {
   chain: Chain;
   address: string;
-  owner: string; // who controls it
-  label: string; // what it is for
-  source: Source; // where it was published (provenance)
-  verifiedAt: string; // YYYY-MM-DD a human confirmed it
+  owner: string;
+  label: string;
+  source: Source;
+  verifiedAt: string; // YYYY-MM-DD
+  /** other chains the same address works on (EVM) */
+  alsoOn?: string[];
 }
 
+const DONATION_SOURCE: Source = {
+  name: "Lista verificada de Confía",
+  url: process.env.CONFIA_PUBLIC_URL || "https://confia-rose.vercel.app",
+};
+
 export const VERIFIED_WALLETS: VerifiedWallet[] = [
+  { chain: "solana", address: SOL_DONATION, owner: "Confía", label: "Donaciones verificadas (Solana)", source: DONATION_SOURCE, verifiedAt: "2026-06-27" },
+  { chain: "evm", address: EVM_DONATION, owner: "Confía", label: "Donaciones verificadas (EVM)", alsoOn: EVM_CHAINS, source: DONATION_SOURCE, verifiedAt: "2026-06-27" },
+  { chain: "bitcoin", address: BTC_DONATION, owner: "Confía", label: "Donaciones verificadas (Bitcoin)", source: DONATION_SOURCE, verifiedAt: "2026-06-27" },
+  { chain: "sui", address: SUI_DONATION, owner: "Confía", label: "Donaciones verificadas (Sui)", source: DONATION_SOURCE, verifiedAt: "2026-06-27" },
+  // previously verified third-party relief wallet
   {
     chain: "solana",
     address: "59aQtUWWU2VVU5QZySUxLy3VDsYkoeVZuVU8J4zJmMVq",
     owner: "@soymaikoldev",
     label: "Donaciones para damnificados del terremoto",
-    source: {
-      name: "@soymaikoldev (X)",
-      url: "https://x.com/soymaikoldev/status/2070190102421119372",
-    },
+    source: { name: "@soymaikoldev (X)", url: "https://x.com/soymaikoldev/status/2070190102421119372" },
     verifiedAt: "2026-06-26",
   },
 ];
 
-const ENV_VERIFIED = (process.env.CONFIA_VERIFIED_LIST || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+// hex (0x...) and bech32 (bc1...) addresses are case-insensitive; base58 (Solana) is not.
+function caseInsensitive(addr: string): boolean {
+  return /^(0x|bc1|tb1)/i.test(addr);
+}
+function norm(addr: string): string {
+  return caseInsensitive(addr) ? addr.toLowerCase() : addr;
+}
 
-export const VERIFIED_BY_ADDRESS = new Map<string, VerifiedWallet>();
-for (const w of VERIFIED_WALLETS) VERIFIED_BY_ADDRESS.set(w.address, w);
-for (const a of ENV_VERIFIED) {
-  if (!VERIFIED_BY_ADDRESS.has(a)) {
-    VERIFIED_BY_ADDRESS.set(a, {
-      chain: "solana",
-      address: a,
-      owner: "Lista verificada interna",
-      label: "Dirección verificada",
-      source: { name: "Lista verificada de Confía" },
-      verifiedAt: "",
-    });
+const VERIFIED_INDEX = new Map<string, VerifiedWallet>();
+for (const w of VERIFIED_WALLETS) VERIFIED_INDEX.set(norm(w.address), w);
+
+// ops override (no provenance label)
+for (const a of (process.env.CONFIA_VERIFIED_LIST || "").split(",").map((s) => s.trim()).filter(Boolean)) {
+  const k = norm(a);
+  if (!VERIFIED_INDEX.has(k)) {
+    VERIFIED_INDEX.set(k, { chain: "desconocida", address: a, owner: "Lista verificada interna", label: "Dirección verificada", source: { name: "Lista verificada de Confía" }, verifiedAt: "" });
   }
 }
 
+/** Exact (case-aware) match against the verified allowlist. */
+export function findVerified(address: string): VerifiedWallet | null {
+  return VERIFIED_INDEX.get(norm(address)) ?? null;
+}
+
 /**
- * Address-poisoning / lookalike check: a scammer publishes a vanity address that shares
- * the same first/last characters as a verified one (what users eyeball when comparing).
- * If a pasted address matches a verified one's head+tail but is NOT identical, it's a
- * likely impersonation.
+ * Address poisoning / lookalike: same first+last chars as a verified address (what users
+ * eyeball) but not identical → likely impersonation. Case-insensitive.
  */
 export function lookalikeOf(address: string): VerifiedWallet | null {
-  const head = address.slice(0, 5);
-  const tail = address.slice(-5);
-  for (const w of VERIFIED_BY_ADDRESS.values()) {
-    if (w.address === address) continue;
-    if (w.address.slice(0, 5) === head && w.address.slice(-5) === tail) return w;
+  const a = norm(address);
+  const head = a.slice(0, 5);
+  const tail = a.slice(-5);
+  for (const w of VERIFIED_INDEX.values()) {
+    const wa = norm(w.address);
+    if (wa === a) continue;
+    if (wa.slice(0, 5) === head && wa.slice(-5) === tail) return w;
   }
   return null;
 }

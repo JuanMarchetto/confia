@@ -2,6 +2,7 @@
 
 import { classify } from "./classify";
 import { analyzeAddress, extractAddresses, RISK_RANK, type ForensicResult } from "./forensics";
+import { DONATION_CHANNELS } from "./knowledge/verified-wallets";
 import { OFFICIAL_CHANNELS, KNOWLEDGE_REVIEWED_AT } from "./knowledge/official";
 import type {
   InfoVerdict,
@@ -97,6 +98,8 @@ function buildWalletVerdict(query: string, f: ForensicResult, addressCount = 1):
 
   const advice = walletAdvice(f);
   const sources = f.verified ? [f.verified.source, ...chainExplorer(f)] : chainExplorer(f);
+  // when the address isn't trusted, surface the safe official donation addresses
+  const donationChannels = f.verified || f.risk === "bajo" ? undefined : DONATION_CHANNELS;
 
   const shareText = buildShare(`${headline}\nDirección: ${truncate(f.address)}`, advice);
 
@@ -114,6 +117,7 @@ function buildWalletVerdict(query: string, f: ForensicResult, addressCount = 1):
     advice,
     sources,
     officialChannels: OFFICIAL_CHANNELS,
+    donationChannels,
     updatedAt: new Date().toISOString(), // live on-chain read
     shareText,
   };
@@ -168,8 +172,10 @@ function walletAdvice(f: ForensicResult): string {
 function chainExplorer(f: ForensicResult): Source[] {
   if (f.chain === "solana")
     return [{ name: "Ver en Solscan", url: `https://solscan.io/account/${f.address}` }];
-  if (f.chain === "ethereum")
-    return [{ name: "Ver en Etherscan", url: `https://etherscan.io/address/${f.address}` }];
+  if (f.chain === "evm")
+    return [{ name: "Ver en Blockscan", url: `https://blockscan.com/address/${f.address}` }];
+  if (f.chain === "sui")
+    return [{ name: "Ver en Suiscan", url: `https://suiscan.xyz/mainnet/account/${f.address}` }];
   if (f.chain === "tron")
     return [{ name: "Ver en Tronscan", url: `https://tronscan.org/#/address/${f.address}` }];
   if (f.chain === "bitcoin")

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Source, Verdict, WalletVerdict } from "@/lib/types";
+import DonationList from "./DonationList";
 
 type Tone = "danger" | "warn" | "ok" | "neutral";
 
@@ -213,6 +214,17 @@ export default function VerdictCard({
 
         <SourceList items={verdict.sources} label="Fuentes" />
         <SourceList items={verdict.officialChannels} label="Canales oficiales" />
+
+        {verdict.kind === "wallet" &&
+          verdict.donationChannels &&
+          verdict.donationChannels.length > 0 && (
+            <div className="mt-4 rounded-xl border border-emerald-300 bg-emerald-50 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+              <DonationList
+                channels={verdict.donationChannels}
+                title="✅ Dona seguro: direcciones verificadas"
+              />
+            </div>
+          )}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <a

@@ -6,7 +6,7 @@
 
 import bs58 from "bs58";
 import type { Chain, RiskLevel, WalletMetrics, WalletSignal } from "./types";
-import { VERIFIED_BY_ADDRESS, lookalikeOf, type VerifiedWallet } from "./knowledge/verified-wallets";
+import { findVerified, lookalikeOf, type VerifiedWallet } from "./knowledge/verified-wallets";
 
 const PUBLIC_RPC = "https://api.mainnet-beta.solana.com";
 
@@ -35,6 +35,7 @@ const KNOWN_SCAM = new Set<string>(
 // ---------- address detection ----------
 
 const SOL_RE = /\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/g;
+const SUI_RE = /\b0x[a-fA-F0-9]{64}\b/g; // Sui: 0x + 32 bytes (distinct from EVM's 40 hex)
 const ETH_RE = /\b0x[a-fA-F0-9]{40}\b/g;
 const TRON_RE = /\bT[1-9A-HJ-NP-Za-km-z]{33}\b/g;
 const BTC_RE = /\b(bc1[a-z0-9]{11,71}|[13][1-9A-HJ-NP-Za-km-z]{25,39})\b/g;
@@ -62,7 +63,8 @@ export function extractAddresses(text: string): DetectedAddress[] {
       out.push({ chain, address });
     }
   };
-  for (const m of text.matchAll(ETH_RE)) push("ethereum", m[0]);
+  for (const m of text.matchAll(SUI_RE)) push("sui", m[0]);
+  for (const m of text.matchAll(ETH_RE)) push("evm", m[0]);
   for (const m of text.matchAll(TRON_RE)) push("tron", m[0]);
   for (const c of text.match(SOL_RE) || []) if (isValidSolana(c)) push("solana", c);
   for (const m of text.matchAll(BTC_RE)) push("bitcoin", m[0]);
@@ -243,7 +245,7 @@ export async function analyzeAddress(d: DetectedAddress): Promise<ForensicResult
   }
 
   // positive-trust override: human-verified allowlist clears the fresh/never-used danger
-  const verified = VERIFIED_BY_ADDRESS.get(address);
+  const verified = findVerified(address);
   if (verified) {
     let metrics: WalletMetrics | null = null;
     if (chain === "solana") {
@@ -401,8 +403,10 @@ export async function analyzeAddress(d: DetectedAddress): Promise<ForensicResult
 
 function chainName(c: Chain): string {
   switch (c) {
-    case "ethereum":
-      return "Ethereum";
+    case "evm":
+      return "una red EVM (Ethereum, Base, Polygon, Monad, HyperEVM)";
+    case "sui":
+      return "Sui";
     case "tron":
       return "Tron (USDT-TRC20)";
     case "bitcoin":

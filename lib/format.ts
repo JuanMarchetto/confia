@@ -27,6 +27,11 @@ export function formatVerdictText(v: Verdict): string {
   lines.push("", "Canales oficiales:");
   v.officialChannels.slice(0, 4).forEach((s) => lines.push(srcLine(s)));
 
+  if (v.kind === "wallet" && v.donationChannels && v.donationChannels.length) {
+    lines.push("", "✅ Dona seguro (direcciones verificadas):");
+    v.donationChannels.forEach((c) => lines.push(`• ${c.chain}: ${c.address}`));
+  }
+
   lines.push("", "— Confía 🇻🇪 Verifica antes de creer. Verifica antes de donar.");
   return lines.join("\n");
 }
